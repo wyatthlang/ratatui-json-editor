@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 
 pub enum CurrentScreen {
     Main,
@@ -19,7 +20,7 @@ pub struct App {
 }
 
 impl App {
-    pub fn new() -> {
+    pub fn new() -> App {
         App {
             key_input: String::new(),
             value_input: String::new(),
