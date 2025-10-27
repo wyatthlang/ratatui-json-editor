@@ -2,7 +2,7 @@ use ratatui::Frame;
 use ratatui::prelude::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span, Text};
-use ratatui::widgets::{Block, Borders, List, ListItem, Paragraph};
+use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap};
 
 use crate::app::CurrentScreen;
 
@@ -109,6 +109,66 @@ pub fn ui(frame: &mut Frame, app: &App) {
         }
     };
 
-    let keys_note_footer =
+    let key_notes_footer =
         Paragraph::new(Line::from(current_keys_hint)).block(Block::default().borders(Borders::ALL));
+
+    let footer_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+        .split(chunks[2]);
+
+    frame.render_widget(mode_footer, footer_chunks[0]);
+    frame.render_widget(key_notes_footer, footer_chunks[1]);
+
+    if let Some(editing) = &app.currently_editing {
+        let popup_block = Block::default()
+            .title("Enter a key-value pair")
+            .borders(Borders::NONE)
+            .style(Style::default().bg(Color::DarkGray));
+
+        let area = centered_rect(60, 25, frame.area());
+        frame.render_widget(popup_block, area);
+
+        let popup_chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .margin(1)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .split(area);
+
+        let mut key_block = Block::default().title("Key").borders(Borders::ALL);
+        let mut value_block = Block::default().title("Value").borders(Borders::ALL);
+
+        let active_style = Style::default().bg(Color::LightYellow).fg(Color::Black);
+
+        match editing {
+            CurrentlyEditing::Key => key_block = key_block.style(active_style),
+            CurrentlyEditing::Value => value_block = value_block.style(active_style),
+        };
+
+        let key_text = Paragraph::new(app.key_input.clone()).block(key_block);
+        frame.render_widget(key_text, popup_chunks[0]);
+
+        let value_text = Paragraph::new(app.value_input.clone()).block(value_block);
+        frame.render_widget(value_text, popup_chunks[1]);
+    }
+
+    if let CurrentScreen::Exiting = app.current_screen {
+        frame.render_widget(Clear, frame.area());
+        let popup_block = Block::default()
+            .title("Y/N")
+            .borders(Borders::NONE)
+            .style(Style::default().bg(Color::DarkGray));
+
+        let exit_text = Text::styled(
+            "would you like to output the buffer as json? (y/n)",
+            Style::default().fg(Color::Red),
+        );
+
+        let exit_paragraph = Paragraph::new(exit_text)
+            .block(popup_block)
+            .wrap(Wrap { trim: false });
+
+        let area = centered_rect(60, 25, frame.area());
+        frame.render_widget(exit_paragraph, area);
+    }
 }
